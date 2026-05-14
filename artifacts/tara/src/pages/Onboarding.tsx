@@ -68,7 +68,7 @@ export default function Onboarding() {
         toast({
           variant: "destructive",
           title: "Error",
-          description: error.data?.error || "Failed to complete onboarding.",
+          description: (error as any)?.data?.error || "Failed to complete onboarding.",
         });
       }
     });
