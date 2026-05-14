@@ -9,6 +9,7 @@ import notificationsRouter from "./notifications";
 import walletRouter from "./wallet";
 import itinerariesRouter from "./itineraries";
 import anthropicRouter from "./anthropic/index";
+import sseRouter from "./sse";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(notificationsRouter);
 router.use(walletRouter);
 router.use(itinerariesRouter);
 router.use(anthropicRouter);
+router.use(sseRouter);
 
 export default router;
