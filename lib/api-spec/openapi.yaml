@@ -1,22 +1,41 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: TARA Travel Assistant API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: users
+    description: User profile operations
+  - name: trips
+    description: Trip management
+  - name: agents
+    description: AI agent control
+  - name: agentLogs
+    description: Agent activity logs
+  - name: notifications
+    description: Notifications
+  - name: wallet
+    description: Wallet and payments
+  - name: itineraries
+    description: Trip planning
+  - name: dashboard
+    description: Dashboard aggregates
+  - name: anthropic
+    description: Anthropic AI chat operations
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +43,702 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── AUTH ─────────────────────────────────────────────────────────────────
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ─── USERS ────────────────────────────────────────────────────────────────
+  /users/profile:
+    patch:
+      operationId: updateProfile
+      tags: [users]
+      summary: Update user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/onboarding:
+    post:
+      operationId: completeOnboarding
+      tags: [users]
+      summary: Complete onboarding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OnboardingInput"
+      responses:
+        "200":
+          description: Onboarding complete
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # ─── DASHBOARD ────────────────────────────────────────────────────────────
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get dashboard statistics
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  # ─── TRIPS ────────────────────────────────────────────────────────────────
+  /trips:
+    get:
+      operationId: listTrips
+      tags: [trips]
+      summary: List all trips for the current user
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Trips
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Trip"
+    post:
+      operationId: createTrip
+      tags: [trips]
+      summary: Create a new trip
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TripInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trip"
+
+  /trips/active:
+    get:
+      operationId: listActiveTrips
+      tags: [trips]
+      summary: Get active trips with live info
+      responses:
+        "200":
+          description: Active trips
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Trip"
+
+  /trips/{id}:
+    get:
+      operationId: getTrip
+      tags: [trips]
+      summary: Get a single trip with full detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Trip
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateTrip
+      tags: [trips]
+      summary: Update a trip
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TripUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trip"
+    delete:
+      operationId: deleteTrip
+      tags: [trips]
+      summary: Delete a trip
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /trips/{id}/boarding-pass:
+    get:
+      operationId: getBoardingPass
+      tags: [trips]
+      summary: Get boarding pass for a trip
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Boarding pass
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BoardingPass"
+
+  /trips/{id}/alerts:
+    get:
+      operationId: getTripAlerts
+      tags: [trips]
+      summary: Get alerts for a trip
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TripAlert"
+
+  # ─── AGENTS ───────────────────────────────────────────────────────────────
+  /agents:
+    get:
+      operationId: listAgents
+      tags: [agents]
+      summary: List all agents and their status
+      responses:
+        "200":
+          description: Agents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Agent"
+
+  /agents/{agentId}:
+    get:
+      operationId: getAgent
+      tags: [agents]
+      summary: Get a single agent
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Agent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+    patch:
+      operationId: updateAgent
+      tags: [agents]
+      summary: Update agent settings
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+
+  /agents/stats:
+    get:
+      operationId: getAgentStats
+      tags: [agents]
+      summary: Aggregated agent performance stats
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentStats"
+
+  # ─── AGENT LOGS ───────────────────────────────────────────────────────────
+  /agent-logs:
+    get:
+      operationId: listAgentLogs
+      tags: [agentLogs]
+      summary: List agent activity logs
+      parameters:
+        - name: agentId
+          in: query
+          schema:
+            type: string
+        - name: tripId
+          in: query
+          schema:
+            type: integer
+        - name: severity
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgentLog"
+
+  # ─── NOTIFICATIONS ────────────────────────────────────────────────────────
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List notifications for current user
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: Done
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /notifications/{id}/read:
+    post:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a notification as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  /notifications/{id}:
+    delete:
+      operationId: deleteNotification
+      tags: [notifications]
+      summary: Delete a notification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── WALLET ───────────────────────────────────────────────────────────────
+  /wallet:
+    get:
+      operationId: getWallet
+      tags: [wallet]
+      summary: Get wallet balance and summary
+      responses:
+        "200":
+          description: Wallet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+
+  /wallet/transactions:
+    get:
+      operationId: listTransactions
+      tags: [wallet]
+      summary: List wallet transactions
+      responses:
+        "200":
+          description: Transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+
+  /wallet/fund:
+    post:
+      operationId: fundWallet
+      tags: [wallet]
+      summary: Add funds to wallet (simulated)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FundInput"
+      responses:
+        "200":
+          description: Funded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+
+  # ─── ITINERARIES ──────────────────────────────────────────────────────────
+  /itineraries:
+    get:
+      operationId: listItineraries
+      tags: [itineraries]
+      summary: List saved itineraries
+      responses:
+        "200":
+          description: Itineraries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Itinerary"
+    post:
+      operationId: createItinerary
+      tags: [itineraries]
+      summary: Generate an itinerary from a prompt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ItineraryInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Itinerary"
+
+  /itineraries/{id}:
+    get:
+      operationId: getItinerary
+      tags: [itineraries]
+      summary: Get a single itinerary
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Itinerary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Itinerary"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteItinerary
+      tags: [itineraries]
+      summary: Delete an itinerary
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── ANTHROPIC ────────────────────────────────────────────────────────────
+  /anthropic/conversations:
+    get:
+      operationId: listAnthropicConversations
+      tags: [anthropic]
+      summary: List all conversations
+      responses:
+        "200":
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnthropicConversation"
+    post:
+      operationId: createAnthropicConversation
+      tags: [anthropic]
+      summary: Create a new conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnthropicConversationInput"
+      responses:
+        "201":
+          description: Created conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnthropicConversation"
+
+  /anthropic/conversations/{id}:
+    get:
+      operationId: getAnthropicConversation
+      tags: [anthropic]
+      summary: Get conversation with messages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Conversation with messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnthropicConversationWithMessages"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnthropicError"
+    delete:
+      operationId: deleteAnthropicConversation
+      tags: [anthropic]
+      summary: Delete a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnthropicError"
+
+  /anthropic/conversations/{id}/messages:
+    get:
+      operationId: listAnthropicMessages
+      tags: [anthropic]
+      summary: List messages in a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnthropicMessage"
+    post:
+      operationId: sendAnthropicMessage
+      tags: [anthropic]
+      summary: Send a message and receive AI response (SSE stream)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnthropicMessageInput"
+      responses:
+        "200":
+          description: SSE stream of assistant response chunks
+          content:
+            text/event-stream: {}
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +749,826 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    # ─── AUTH ──────────────────────────────────────────────────────────────
+    RegisterInput:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+      required:
+        - name
+        - email
+        - password
+
+    LoginInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+      required:
+        - user
+        - token
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        photoUrl:
+          type: ["string", "null"]
+        seatPreference:
+          type: ["string", "null"]
+        mealPreference:
+          type: ["string", "null"]
+        airlinePreference:
+          type: ["string", "null"]
+        walletBalance:
+          type: number
+        taraPoints:
+          type: integer
+        onboardingComplete:
+          type: boolean
+        plan:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - email
+        - walletBalance
+        - taraPoints
+        - onboardingComplete
+        - plan
+        - createdAt
+
+    ProfileUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        photoUrl:
+          type: string
+        seatPreference:
+          type: string
+        mealPreference:
+          type: string
+        airlinePreference:
+          type: string
+
+    OnboardingInput:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        photoUrl:
+          type: ["string", "null"]
+        seatPreference:
+          type: string
+        mealPreference:
+          type: string
+        airlinePreference:
+          type: string
+        whatsappNumber:
+          type: string
+      required:
+        - name
+        - phone
+
+    # ─── DASHBOARD ─────────────────────────────────────────────────────────
+    DashboardStats:
+      type: object
+      properties:
+        activeTrips:
+          type: integer
+        totalTrips:
+          type: integer
+        totalKm:
+          type: integer
+        moneySavedNgn:
+          type: integer
+        activeAgents:
+          type: integer
+        recentLogs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentLog"
+        suggestedDestinations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Destination"
+      required:
+        - activeTrips
+        - totalTrips
+        - totalKm
+        - moneySavedNgn
+        - activeAgents
+        - recentLogs
+        - suggestedDestinations
+
+    Destination:
+      type: object
+      properties:
+        city:
+          type: string
+        country:
+          type: string
+        code:
+          type: string
+        priceFrom:
+          type: integer
+        imageUrl:
+          type: string
+        reason:
+          type: string
+      required:
+        - city
+        - country
+        - code
+        - priceFrom
+        - imageUrl
+        - reason
+
+    # ─── TRIPS ─────────────────────────────────────────────────────────────
+    Trip:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        status:
+          type: string
+        origin:
+          type: string
+        originCode:
+          type: string
+        destination:
+          type: string
+        destinationCode:
+          type: string
+        airline:
+          type: string
+        airlineCode:
+          type: string
+        flightNumber:
+          type: string
+        departureTime:
+          type: string
+          format: date-time
+        arrivalTime:
+          type: string
+          format: date-time
+        gate:
+          type: ["string", "null"]
+        terminal:
+          type: ["string", "null"]
+        seat:
+          type: ["string", "null"]
+        flightStatus:
+          type: string
+        hotelName:
+          type: ["string", "null"]
+        hotelCheckIn:
+          type: ["string", "null"]
+        hotelCheckOut:
+          type: ["string", "null"]
+        budgetNgn:
+          type: ["integer", "null"]
+        spentNgn:
+          type: ["integer", "null"]
+        pricePaidNgn:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - status
+        - origin
+        - originCode
+        - destination
+        - destinationCode
+        - airline
+        - airlineCode
+        - flightNumber
+        - departureTime
+        - arrivalTime
+        - flightStatus
+        - pricePaidNgn
+        - createdAt
+
+    TripDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        status:
+          type: string
+        origin:
+          type: string
+        originCode:
+          type: string
+        destination:
+          type: string
+        destinationCode:
+          type: string
+        airline:
+          type: string
+        airlineCode:
+          type: string
+        flightNumber:
+          type: string
+        departureTime:
+          type: string
+          format: date-time
+        arrivalTime:
+          type: string
+          format: date-time
+        gate:
+          type: ["string", "null"]
+        terminal:
+          type: ["string", "null"]
+        seat:
+          type: ["string", "null"]
+        flightStatus:
+          type: string
+        hotelName:
+          type: ["string", "null"]
+        hotelAddress:
+          type: ["string", "null"]
+        hotelCheckIn:
+          type: ["string", "null"]
+        hotelCheckOut:
+          type: ["string", "null"]
+        budgetNgn:
+          type: ["integer", "null"]
+        spentNgn:
+          type: ["integer", "null"]
+        pricePaidNgn:
+          type: integer
+        alerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/TripAlert"
+        agentLogs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentLog"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - status
+        - origin
+        - originCode
+        - destination
+        - destinationCode
+        - airline
+        - airlineCode
+        - flightNumber
+        - departureTime
+        - arrivalTime
+        - flightStatus
+        - pricePaidNgn
+        - alerts
+        - agentLogs
+        - createdAt
+
+    TripInput:
+      type: object
+      properties:
+        origin:
+          type: string
+        originCode:
+          type: string
+        destination:
+          type: string
+        destinationCode:
+          type: string
+        airline:
+          type: string
+        airlineCode:
+          type: string
+        flightNumber:
+          type: string
+        departureTime:
+          type: string
+          format: date-time
+        arrivalTime:
+          type: string
+          format: date-time
+        seat:
+          type: string
+        hotelName:
+          type: string
+        hotelCheckIn:
+          type: string
+        hotelCheckOut:
+          type: string
+        budgetNgn:
+          type: integer
+        pricePaidNgn:
+          type: integer
+      required:
+        - origin
+        - originCode
+        - destination
+        - destinationCode
+        - airline
+        - airlineCode
+        - flightNumber
+        - departureTime
+        - arrivalTime
+        - pricePaidNgn
+
+    TripUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+        gate:
+          type: string
+        terminal:
+          type: string
+        flightStatus:
+          type: string
+        hotelName:
+          type: string
+        hotelCheckIn:
+          type: string
+        hotelCheckOut:
+          type: string
+        spentNgn:
+          type: integer
+
+    BoardingPass:
+      type: object
+      properties:
+        tripId:
+          type: integer
+        passengerName:
+          type: string
+        flightNumber:
+          type: string
+        origin:
+          type: string
+        originCode:
+          type: string
+        destination:
+          type: string
+        destinationCode:
+          type: string
+        departureTime:
+          type: string
+          format: date-time
+        gate:
+          type: ["string", "null"]
+        terminal:
+          type: ["string", "null"]
+        seat:
+          type: ["string", "null"]
+        airline:
+          type: string
+        qrData:
+          type: string
+        version:
+          type: integer
+        lastUpdated:
+          type: string
+          format: date-time
+      required:
+        - tripId
+        - passengerName
+        - flightNumber
+        - origin
+        - originCode
+        - destination
+        - destinationCode
+        - departureTime
+        - airline
+        - qrData
+        - version
+        - lastUpdated
+
+    TripAlert:
+      type: object
+      properties:
+        id:
+          type: integer
+        tripId:
+          type: integer
+        type:
+          type: string
+        message:
+          type: string
+        severity:
+          type: string
+        agentName:
+          type: string
+        dismissed:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tripId
+        - type
+        - message
+        - severity
+        - agentName
+        - dismissed
+        - createdAt
+
+    # ─── AGENTS ────────────────────────────────────────────────────────────
+    Agent:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+        enabled:
+          type: boolean
+        frequency:
+          type: integer
+        status:
+          type: string
+        lastAction:
+          type: ["string", "null"]
+        lastCheck:
+          type: ["string", "null"]
+        nextCheck:
+          type: ["string", "null"]
+        actionsToday:
+          type: integer
+        actionsTotal:
+          type: integer
+        healthScore:
+          type: integer
+      required:
+        - id
+        - userId
+        - name
+        - description
+        - type
+        - enabled
+        - frequency
+        - status
+        - actionsToday
+        - actionsTotal
+        - healthScore
+
+    AgentUpdate:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        frequency:
+          type: integer
+
+    AgentStats:
+      type: object
+      properties:
+        totalActions:
+          type: integer
+        activeAgents:
+          type: integer
+        issuesFound:
+          type: integer
+        moneySaved:
+          type: integer
+      required:
+        - totalActions
+        - activeAgents
+        - issuesFound
+        - moneySaved
+
+    # ─── AGENT LOGS ────────────────────────────────────────────────────────
+    AgentLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        agentId:
+          type: string
+        agentName:
+          type: string
+        tripId:
+          type: ["integer", "null"]
+        userId:
+          type: integer
+        action:
+          type: string
+        result:
+          type: string
+        severity:
+          type: string
+        notified:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - agentId
+        - agentName
+        - userId
+        - action
+        - result
+        - severity
+        - notified
+        - createdAt
+
+    # ─── NOTIFICATIONS ─────────────────────────────────────────────────────
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        type:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        read:
+          type: boolean
+        tripId:
+          type: ["integer", "null"]
+        agentId:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - type
+        - title
+        - body
+        - read
+        - createdAt
+
+    # ─── WALLET ────────────────────────────────────────────────────────────
+    Wallet:
+      type: object
+      properties:
+        balance:
+          type: number
+        taraPoints:
+          type: integer
+        totalSaved:
+          type: number
+        totalSpent:
+          type: number
+      required:
+        - balance
+        - taraPoints
+        - totalSaved
+        - totalSpent
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        type:
+          type: string
+        description:
+          type: string
+        amountNgn:
+          type: number
+        points:
+          type: ["integer", "null"]
+        tripId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - type
+        - description
+        - amountNgn
+        - createdAt
+
+    FundInput:
+      type: object
+      properties:
+        amountNgn:
+          type: number
+      required:
+        - amountNgn
+
+    # ─── ITINERARIES ───────────────────────────────────────────────────────
+    Itinerary:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        prompt:
+          type: string
+        title:
+          type: string
+        totalCostNgn:
+          type: integer
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItineraryDay"
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - prompt
+        - title
+        - totalCostNgn
+        - days
+        - status
+        - createdAt
+
+    ItineraryDay:
+      type: object
+      properties:
+        day:
+          type: integer
+        date:
+          type: string
+        city:
+          type: string
+        activities:
+          type: array
+          items:
+            type: string
+        flightSegment:
+          type: ["string", "null"]
+        hotelName:
+          type: ["string", "null"]
+        estimatedCostNgn:
+          type: integer
+      required:
+        - day
+        - date
+        - city
+        - activities
+        - estimatedCostNgn
+
+    ItineraryInput:
+      type: object
+      properties:
+        prompt:
+          type: string
+      required:
+        - prompt
+
+    # ─── ANTHROPIC ─────────────────────────────────────────────────────────
+    AnthropicConversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - createdAt
+
+    AnthropicMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        role:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - conversationId
+        - role
+        - content
+        - createdAt
+
+    AnthropicConversationInput:
+      type: object
+      properties:
+        title:
+          type: string
+      required:
+        - title
+
+    AnthropicMessageInput:
+      type: object
+      properties:
+        content:
+          type: string
+      required:
+        - content
+
+    AnthropicConversationWithMessages:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnthropicMessage"
+      required:
+        - id
+        - title
+        - createdAt
+        - messages
+
+    AnthropicError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
