@@ -6,7 +6,7 @@ import { useLiveAgentFeed } from "@/hooks/useLiveAgentFeed";
 import { useListNotifications } from "@workspace/api-client-react";
 import {
   Plane, LayoutDashboard, Settings, User as UserIcon, Bell, LogOut,
-  MessageSquare, Briefcase, Map, Wallet, Activity, Menu, X
+  MessageSquare, Briefcase, Map, Wallet, Activity, Menu, X, ShieldCheck
 } from "lucide-react";
 
 interface AppLayoutProps {
@@ -24,6 +24,8 @@ export function AppLayout({ children }: AppLayoutProps) {
   const dbUnread = (dbNotifs as any[]).filter(n => !n.read).length;
   const totalUnread = Math.max(dbUnread, liveUnread);
 
+  const isAdmin = !!(user as any)?.isAdmin;
+
   const navItems = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", match: (l: string) => l === "/dashboard" },
     { href: "/plan", icon: Map, label: "Plan Trip", match: (l: string) => l === "/plan" },
@@ -31,6 +33,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     { href: "/agents", icon: Briefcase, label: "AI Agents", match: (l: string) => l.startsWith("/agent") },
     { href: "/wallet", icon: Wallet, label: "Wallet", match: (l: string) => l === "/wallet" },
     { href: "/notifications", icon: Bell, label: "Alerts", badge: totalUnread, match: (l: string) => l === "/notifications" },
+    ...(isAdmin ? [{ href: "/admin", icon: ShieldCheck, label: "Admin", match: (l: string) => l === "/admin" }] : []),
   ];
 
   return (

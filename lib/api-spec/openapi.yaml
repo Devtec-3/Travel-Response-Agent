@@ -739,6 +739,77 @@ paths:
           content:
             text/event-stream: {}
 
+  # ─── ADMIN ──────────────────────────────────────────────────────────────
+  /api/admin/stats:
+    get:
+      operationId: getAdminStats
+      summary: Platform statistics
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Platform stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /api/admin/users:
+    get:
+      operationId: listAdminUsers
+      summary: List all users
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: All users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUser"
+
+  /api/admin/users/{userId}/make-admin:
+    post:
+      operationId: makeUserAdmin
+      summary: Grant admin role to user
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUser"
+
+  /api/admin/trips:
+    get:
+      operationId: listAdminTrips
+      summary: List all trips across all users
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: All trips
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminTrip"
+
 components:
   schemas:
     HealthStatus:
@@ -832,6 +903,8 @@ components:
           type: boolean
         plan:
           type: string
+        isAdmin:
+          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -843,6 +916,7 @@ components:
         - taraPoints
         - onboardingComplete
         - plan
+        - isAdmin
         - createdAt
 
     ProfileUpdate:
@@ -1572,3 +1646,118 @@ components:
           type: string
       required:
         - error
+
+    # ─── ADMIN ────────────────────────────────────────────────────────────────
+    AdminStats:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        totalTrips:
+          type: integer
+        activeTrips:
+          type: integer
+        totalAgents:
+          type: integer
+        activeAgents:
+          type: integer
+        totalAgentActions:
+          type: integer
+        totalNotifications:
+          type: integer
+        newUsersToday:
+          type: integer
+      required:
+        - totalUsers
+        - totalTrips
+        - activeTrips
+        - totalAgents
+        - activeAgents
+        - totalAgentActions
+        - totalNotifications
+        - newUsersToday
+
+    AdminUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        plan:
+          type: string
+        isAdmin:
+          type: boolean
+        onboardingComplete:
+          type: boolean
+        taraPoints:
+          type: integer
+        walletBalance:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        tripCount:
+          type: integer
+        agentCount:
+          type: integer
+      required:
+        - id
+        - name
+        - email
+        - plan
+        - isAdmin
+        - onboardingComplete
+        - taraPoints
+        - walletBalance
+        - createdAt
+        - tripCount
+        - agentCount
+
+    AdminTrip:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        origin:
+          type: string
+        originCode:
+          type: string
+        destination:
+          type: string
+        destinationCode:
+          type: string
+        flightNumber:
+          type: string
+        airline:
+          type: string
+        status:
+          type: string
+        flightStatus:
+          type: string
+        departureTime:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - userName
+        - origin
+        - originCode
+        - destination
+        - destinationCode
+        - flightNumber
+        - airline
+        - status
+        - flightStatus
+        - departureTime
+        - createdAt

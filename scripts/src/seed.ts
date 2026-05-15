@@ -49,6 +49,7 @@ async function main() {
       taraPoints: 3840,
       onboardingComplete: true,
       plan: "pro",
+      isAdmin: true,
     }).returning();
     user = u;
     console.log("Created demo user:", user.id);

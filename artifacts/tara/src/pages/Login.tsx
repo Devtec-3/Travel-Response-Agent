@@ -64,8 +64,7 @@ export default function Login() {
       onSuccess: (response) => {
         login(response.token, response.user);
         toast({ title: "Account created", description: "Welcome to TARA." });
-        // Normally go to /onboarding for new users
-        setLocation("/dashboard"); 
+        setLocation("/onboarding");
       },
       onError: (error) => {
         toast({

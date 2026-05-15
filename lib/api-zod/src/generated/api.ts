@@ -47,6 +47,7 @@ export const LoginResponse = zod.object({
     taraPoints: zod.number(),
     onboardingComplete: zod.boolean(),
     plan: zod.string(),
+    isAdmin: zod.boolean(),
     createdAt: zod.coerce.date(),
   }),
   token: zod.string(),
@@ -75,6 +76,7 @@ export const GetMeResponse = zod.object({
   taraPoints: zod.number(),
   onboardingComplete: zod.boolean(),
   plan: zod.string(),
+  isAdmin: zod.boolean(),
   createdAt: zod.coerce.date(),
 });
 
@@ -103,6 +105,7 @@ export const UpdateProfileResponse = zod.object({
   taraPoints: zod.number(),
   onboardingComplete: zod.boolean(),
   plan: zod.string(),
+  isAdmin: zod.boolean(),
   createdAt: zod.coerce.date(),
 });
 
@@ -132,6 +135,7 @@ export const CompleteOnboardingResponse = zod.object({
   taraPoints: zod.number(),
   onboardingComplete: zod.boolean(),
   plan: zod.string(),
+  isAdmin: zod.boolean(),
   createdAt: zod.coerce.date(),
 });
 
@@ -751,3 +755,76 @@ export const SendAnthropicMessageParams = zod.object({
 export const SendAnthropicMessageBody = zod.object({
   content: zod.string(),
 });
+
+/**
+ * @summary Platform statistics
+ */
+export const GetAdminStatsResponse = zod.object({
+  totalUsers: zod.number(),
+  totalTrips: zod.number(),
+  activeTrips: zod.number(),
+  totalAgents: zod.number(),
+  activeAgents: zod.number(),
+  totalAgentActions: zod.number(),
+  totalNotifications: zod.number(),
+  newUsersToday: zod.number(),
+});
+
+/**
+ * @summary List all users
+ */
+export const ListAdminUsersResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string(),
+  plan: zod.string(),
+  isAdmin: zod.boolean(),
+  onboardingComplete: zod.boolean(),
+  taraPoints: zod.number(),
+  walletBalance: zod.number(),
+  createdAt: zod.coerce.date(),
+  tripCount: zod.number(),
+  agentCount: zod.number(),
+});
+export const ListAdminUsersResponse = zod.array(ListAdminUsersResponseItem);
+
+/**
+ * @summary Grant admin role to user
+ */
+export const MakeUserAdminParams = zod.object({
+  userId: zod.coerce.number(),
+});
+
+export const MakeUserAdminResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string(),
+  plan: zod.string(),
+  isAdmin: zod.boolean(),
+  onboardingComplete: zod.boolean(),
+  taraPoints: zod.number(),
+  walletBalance: zod.number(),
+  createdAt: zod.coerce.date(),
+  tripCount: zod.number(),
+  agentCount: zod.number(),
+});
+
+/**
+ * @summary List all trips across all users
+ */
+export const ListAdminTripsResponseItem = zod.object({
+  id: zod.number(),
+  userId: zod.number(),
+  userName: zod.string(),
+  origin: zod.string(),
+  originCode: zod.string(),
+  destination: zod.string(),
+  destinationCode: zod.string(),
+  flightNumber: zod.string(),
+  airline: zod.string(),
+  status: zod.string(),
+  flightStatus: zod.string(),
+  departureTime: zod.coerce.date(),
+  createdAt: zod.coerce.date(),
+});
+export const ListAdminTripsResponse = zod.array(ListAdminTripsResponseItem);

@@ -19,6 +19,7 @@ import Trips from "@/pages/Trips";
 import Wallet from "@/pages/Wallet";
 import Notifications from "@/pages/Notifications";
 import Settings from "@/pages/Settings";
+import Admin from "@/pages/Admin";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -68,6 +69,7 @@ function Router() {
       <Route path="/wallet"><ProtectedRoute component={Wallet} /></Route>
       <Route path="/notifications"><ProtectedRoute component={Notifications} /></Route>
       <Route path="/settings"><ProtectedRoute component={Settings} /></Route>
+      <Route path="/admin"><ProtectedRoute component={Admin} /></Route>
       <Route component={NotFound} />
     </Switch>
   );

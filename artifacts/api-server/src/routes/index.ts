@@ -10,6 +10,7 @@ import walletRouter from "./wallet";
 import itinerariesRouter from "./itineraries";
 import anthropicRouter from "./anthropic/index";
 import sseRouter from "./sse";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(walletRouter);
 router.use(itinerariesRouter);
 router.use(anthropicRouter);
 router.use(sseRouter);
+router.use(adminRouter);
 
 export default router;

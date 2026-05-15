@@ -47,6 +47,7 @@ export interface User {
   taraPoints: number;
   onboardingComplete: boolean;
   plan: string;
+  isAdmin: boolean;
   createdAt: string;
 }
 
@@ -369,6 +370,47 @@ export interface AnthropicConversationWithMessages {
 
 export interface AnthropicError {
   error: string;
+}
+
+export interface AdminStats {
+  totalUsers: number;
+  totalTrips: number;
+  activeTrips: number;
+  totalAgents: number;
+  activeAgents: number;
+  totalAgentActions: number;
+  totalNotifications: number;
+  newUsersToday: number;
+}
+
+export interface AdminUser {
+  id: number;
+  name: string;
+  email: string;
+  plan: string;
+  isAdmin: boolean;
+  onboardingComplete: boolean;
+  taraPoints: number;
+  walletBalance: number;
+  createdAt: string;
+  tripCount: number;
+  agentCount: number;
+}
+
+export interface AdminTrip {
+  id: number;
+  userId: number;
+  userName: string;
+  origin: string;
+  originCode: string;
+  destination: string;
+  destinationCode: string;
+  flightNumber: string;
+  airline: string;
+  status: string;
+  flightStatus: string;
+  departureTime: string;
+  createdAt: string;
 }
 
 export type ListTripsParams = {

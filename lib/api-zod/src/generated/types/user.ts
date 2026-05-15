@@ -24,5 +24,6 @@ export interface User {
   taraPoints: number;
   onboardingComplete: boolean;
   plan: string;
+  isAdmin: boolean;
   createdAt: Date;
 }

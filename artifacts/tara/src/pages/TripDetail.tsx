@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, Link } from "wouter";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useGetTrip, useGetBoardingPass, useGetTripAlerts, useListAgentLogs } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Plane, AlertCircle, MapPin, Share2, Wallet, Clock, Hotel, ChevronLeft, Activity, Zap } from "lucide-react";
+import { Plane, AlertCircle, MapPin, Share2, Wallet, Clock, Hotel, ChevronLeft, Activity, Zap, Radio } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -167,6 +167,53 @@ function BoardingPassCard({ trip, passengerName }: { trip: any; passengerName: s
   );
 }
 
+interface LiveFlightEvent {
+  id: number;
+  agentName: string;
+  action: string;
+  result: string;
+  severity: string;
+  createdAt: string;
+}
+
+function useLiveFlightFeed(tripId: number) {
+  const [events, setEvents] = useState<LiveFlightEvent[]>([]);
+  const [lastStatus, setLastStatus] = useState<string | null>(null);
+  const lastFetch = useRef(Date.now() - 60000);
+
+  const fetchFeed = useCallback(async () => {
+    const token = localStorage.getItem("tara_token");
+    if (!token || !tripId) return;
+    try {
+      const res = await fetch(`/api/sse/recent-activity?since=${lastFetch.current}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      lastFetch.current = data.serverTime;
+      const tripLogs = (data.logs || []).filter((l: any) => l.tripId === tripId);
+      if (tripLogs.length) {
+        setEvents(prev => {
+          const ids = new Set(prev.map(e => e.id));
+          const newOnes = tripLogs.filter((l: any) => !ids.has(l.id));
+          return [...newOnes, ...prev].slice(0, 20);
+        });
+        // Update live status from flight monitor
+        const flightLog = tripLogs.find((l: any) => l.agentName?.includes("Flight Monitor") || l.agentName?.includes("Departure"));
+        if (flightLog?.result) setLastStatus(flightLog.result);
+      }
+    } catch { /* silently ignore */ }
+  }, [tripId]);
+
+  useEffect(() => {
+    fetchFeed();
+    const id = setInterval(fetchFeed, 12000);
+    return () => clearInterval(id);
+  }, [fetchFeed]);
+
+  return { events, lastStatus };
+}
+
 export default function TripDetail() {
   const params = useParams<{ id: string }>();
   const tripId = Number(params.id);
@@ -176,6 +223,7 @@ export default function TripDetail() {
   const { data: trip, isLoading: tripLoading } = useGetTrip(tripId);
   const { data: alerts = [] } = useGetTripAlerts(tripId);
   const { data: agentLogs = [] } = useListAgentLogs();
+  const { events: liveEvents, lastStatus } = useLiveFlightFeed(tripId);
 
   const handleWhatsApp = () => {
     toast({ title: "Sent to WhatsApp", description: "Boarding pass sent to your registered number." });
@@ -379,15 +427,50 @@ export default function TripDetail() {
             </>
           )}
 
-          {/* Agent activity on this trip */}
-          {agentLogs.length > 0 && (
-            <>
-              <h2 className="text-lg font-bold font-heading flex items-center gap-2">
-                <Activity size={16} className="text-[#00FF88]" /> Agent Activity
-              </h2>
+          {/* Live flight feed */}
+          <div>
+            <h2 className="text-lg font-bold font-heading flex items-center gap-2 mb-3">
+              <Radio size={16} className="text-[#00FF88]" /> Live Agent Feed
+              <span className="ml-1 flex items-center gap-1 text-xs font-normal text-[#00FF88]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00FF88] animate-pulse inline-block" />
+                polling every 12s
+              </span>
+            </h2>
+            {liveEvents.length === 0 && agentLogs.length === 0 ? (
+              <div className="p-4 rounded-lg bg-card/40 border border-border/50 text-xs text-muted-foreground text-center">
+                Waiting for agent activity on this trip...
+              </div>
+            ) : (
               <div className="space-y-2">
-                {agentLogs.slice(0, 5).map((log: any) => (
-                  <div key={log.id} className="p-3 rounded-lg bg-card/40 border border-border/50">
+                <AnimatePresence initial={false}>
+                  {liveEvents.map((ev) => (
+                    <motion.div
+                      key={`live-${ev.id}`}
+                      initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      className={`p-3 rounded-lg border ${
+                        ev.severity === "critical" ? "bg-red-400/8 border-red-400/20" :
+                        ev.severity === "warning" ? "bg-yellow-400/8 border-yellow-400/20" :
+                        "bg-[#00FF88]/5 border-[#00FF88]/15"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-xs font-semibold text-muted-foreground">{ev.agentName}</span>
+                        <span className="text-[10px] font-mono text-muted-foreground">
+                          {new Date(ev.createdAt).toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                        </span>
+                      </div>
+                      <p className="text-xs text-foreground leading-snug">{ev.action}</p>
+                      {ev.result && (
+                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{ev.result}</p>
+                      )}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+                {/* Historical agent logs */}
+                {agentLogs.slice(0, Math.max(0, 5 - liveEvents.length)).map((log: any) => (
+                  <div key={`hist-${log.id}`} className="p-3 rounded-lg bg-card/40 border border-border/50 opacity-70">
                     <div className="flex items-center justify-between mb-0.5">
                       <span className="text-xs font-semibold text-muted-foreground">{log.agentName}</span>
                       <span className="text-[10px] font-mono text-muted-foreground">
@@ -398,8 +481,8 @@ export default function TripDetail() {
                   </div>
                 ))}
               </div>
-            </>
-          )}
+            )}
+          </div>
 
           {/* Budget summary */}
           {trip.budgetNgn && (

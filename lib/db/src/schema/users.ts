@@ -17,6 +17,7 @@ export const usersTable = pgTable("users", {
   taraPoints: integer("tara_points").notNull().default(0),
   onboardingComplete: boolean("onboarding_complete").notNull().default(false),
   plan: text("plan").notNull().default("free"),
+  isAdmin: boolean("is_admin").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

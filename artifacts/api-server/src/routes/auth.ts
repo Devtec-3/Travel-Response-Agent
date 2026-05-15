@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, generateToken, type AuthRequest } from "../middlewares/auth";
+import { createUserAgents } from "../lib/createUserAgents";
 
 const router = Router();
 
@@ -20,6 +21,7 @@ router.post("/auth/register", async (req, res) => {
     }
     const passwordHash = await bcrypt.hash(password, 10);
     const [user] = await db.insert(usersTable).values({ name, email, passwordHash }).returning();
+    await createUserAgents(user.id);
     const token = generateToken(user.id);
     res.status(201).json({ user: sanitizeUser(user), token });
   } catch (err) {
@@ -72,6 +74,7 @@ function sanitizeUser(user: typeof usersTable.$inferSelect) {
   return {
     ...safe,
     walletBalance: Number(safe.walletBalance),
+    isAdmin: safe.isAdmin ?? false,
   };
 }
 
